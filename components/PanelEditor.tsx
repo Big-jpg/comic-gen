@@ -7,10 +7,22 @@ interface PanelEditorProps {
     visual: string;
     caption: string;
     size: '1024x1024' | '1024x1792' | '1792x1024';
+    quality: 'standard' | 'hd';
+    output_format: 'jpeg' | 'png';
+    output_compression: number;
     onAccept: (index: number, image: string) => void;
 }
 
-export default function PanelEditor({ index, visual, caption, size, onAccept }: PanelEditorProps) {
+export default function PanelEditor({
+    index,
+    visual,
+    caption,
+    size,
+    quality,
+    output_format,
+    output_compression,
+    onAccept,
+}: PanelEditorProps) {
     const [imageData, setImageData] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [accepted, setAccepted] = useState(false);
@@ -23,7 +35,7 @@ export default function PanelEditor({ index, visual, caption, size, onAccept }: 
             const res = await fetch('/api/generate-image', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, size }),
+                body: JSON.stringify({ prompt, size, quality, output_format, output_compression }),
             });
             if (!res.ok) throw new Error(await res.text());
             const { url } = await res.json();
@@ -66,7 +78,7 @@ export default function PanelEditor({ index, visual, caption, size, onAccept }: 
             {imageData && (
                 <div className="space-y-2">
                     <img
-                        src={`data:image/png;base64,${imageData}`}
+                        src={`data:image/${output_format};base64,${imageData}`}
                         alt={`Panel ${index + 1}`}
                         className="w-full object-contain border"
                     />

@@ -15,6 +15,8 @@ const SIZES = {
 } as const;
 
 type SizeKey = keyof typeof SIZES;
+type Quality = 'standard' | 'hd';
+type Format = 'jpeg' | 'png';
 
 type Panel = {
     visual: string;
@@ -27,6 +29,9 @@ export default function StoryPanel({ modifiers }: Props) {
     const [prompt, setPrompt] = useState('');
     const [modifier, setModifier] = useState(modifiers[0]);
     const [size, setSize] = useState<SizeKey>('square');
+    const [quality, setQuality] = useState<Quality>('hd');
+    const [format, setFormat] = useState<Format>('jpeg');
+    const [compression, setCompression] = useState<number>(50);
     const [loading, setLoading] = useState(false);
     const [panels, setPanels] = useState<Panel[]>([]);
     const [finalStrip, setFinalStrip] = useState<string | null>(null);
@@ -95,6 +100,13 @@ export default function StoryPanel({ modifiers }: Props) {
         a.click();
     }
 
+    function resetAll() {
+        setPrompt('');
+        setPanels([]);
+        setFinalStrip(null);
+        setLoading(false);
+    }
+
     return (
         <div className="space-y-4">
             <label className="block font-medium">Scene Prompt</label>
@@ -132,12 +144,50 @@ export default function StoryPanel({ modifiers }: Props) {
                 ))}
             </select>
 
+            <label className="block font-medium">Image Quality</label>
+            <select
+                className="w-full p-2 border rounded"
+                value={quality}
+                onChange={(e) => setQuality(e.target.value as Quality)}
+            >
+                <option value="standard">Standard</option>
+                <option value="hd">High Definition</option>
+            </select>
+
+            <label className="block font-medium">Output Format</label>
+            <select
+                className="w-full p-2 border rounded"
+                value={format}
+                onChange={(e) => setFormat(e.target.value as Format)}
+            >
+                <option value="jpeg">JPEG</option>
+                <option value="png">PNG</option>
+            </select>
+
+            <label className="block font-medium">Compression ({compression}%)</label>
+            <input
+                type="range"
+                min={10}
+                max={90}
+                step={1}
+                value={compression}
+                onChange={(e) => setCompression(Number(e.target.value))}
+                className="w-full"
+            />
+
             <button
                 onClick={interpret}
                 disabled={loading}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full transition-colors"
             >
                 {loading ? 'Processing...' : 'Interpret Script'}
+            </button>
+
+            <button
+                onClick={resetAll}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded w-full transition-colors"
+            >
+                Reset All
             </button>
 
             {panels.length > 0 && (
@@ -151,6 +201,9 @@ export default function StoryPanel({ modifiers }: Props) {
                                 visual={panel.visual}
                                 caption={panel.caption}
                                 size={SIZES[size]}
+                                quality={quality}
+                                output_format={format}
+                                output_compression={compression}
                                 onAccept={handleAccept}
                             />
                         ))}

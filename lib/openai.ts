@@ -5,7 +5,13 @@ export const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY!,
 });
 
-export async function generateStripImageFromScript(script: string): Promise<string> {
+export async function generateStripImageFromScript(
+    script: string,
+    size: '1024x1024' | '1024x1536' | '1536x1024' = '1024x1024',
+    quality: 'low' | 'medium' | 'high' | 'auto' = 'high',
+    compression: number = 50,
+    output_format: 'jpeg' | 'png' = 'jpeg'
+): Promise<string> {
     const prompt = `
 Create a clean, semi-realistic editorial cartoon with four distinct panels in a horizontal strip. Each panel visualizes a moment from the summary below, using consistent characters and color schemes.
 
@@ -15,11 +21,11 @@ Narrative:
 ${script}
 
 Instructions:
-    - Arrange panels left to right.
-    - Ensure character continuity (e.g. same couple throughout).
-    - Use clean typography for captions.
-    - Do not add speech bubbles unless specified.
-    `;
+- Arrange panels left to right.
+- Ensure character continuity (e.g. same couple throughout).
+- Use clean typography for captions.
+- Do not add speech bubbles unless specified.
+`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
@@ -27,11 +33,10 @@ Instructions:
     const result = await openai.images.generate({
         model: 'gpt-image-1',
         prompt,
-        size: '1536x1024',
-        quality: 'high',
-        output_format: 'png',
-        output_compression: 70,
-        response_format: 'b64_json',
+        size,
+        quality,
+        output_compression: compression,
+        output_format,
     });
 
     clearTimeout(timeout);
