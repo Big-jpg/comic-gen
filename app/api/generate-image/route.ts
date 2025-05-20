@@ -1,6 +1,6 @@
 // /app/api/generate-image/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { generateImage } from '@/lib/openai';
+import { generateStripImageFromScript } from '@/lib/openai';
 
 export async function POST(req: NextRequest) {
     try {
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
         }
 
-        const url = await generateImage(prompt);
+        const url = await generateStripImageFromScript(prompt);
         return NextResponse.json({ url });
     } catch (error: any) {
         console.error('Image generation error:', error);
