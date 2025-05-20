@@ -48,3 +48,40 @@ Instructions:
 
     return image_base64;
 }
+
+export async function generateSinglePanelImage(
+    visual: string,
+    caption: string,
+    size: '1024x1024' | '1024x1536' | '1536x1024' = '1024x1024',
+    quality: 'low' | 'medium' | 'high' | 'auto' = 'high',
+    compression: number = 50,
+    output_format: 'jpeg' | 'png' = 'jpeg'
+): Promise<string> {
+    const prompt = `
+Draw a single-panel editorial cartoon using semi-realistic, expressive line art. Use cinematic framing, consistent character design, and moody lighting.
+
+Scene: ${visual}
+Caption: "${caption}"
+`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    const result = await openai.images.generate({
+        model: 'gpt-image-1',
+        prompt,
+        size,
+        quality,
+        output_compression: compression,
+        output_format,
+    });
+
+    clearTimeout(timeout);
+
+    const image_base64 = result.data?.[0]?.b64_json;
+    if (!image_base64) {
+        throw new Error('Single panel generation failed: Missing image data.');
+    }
+
+    return image_base64;
+}

@@ -7,7 +7,7 @@ interface PanelEditorProps {
     visual: string;
     caption: string;
     size: '1024x1024' | '1024x1792' | '1792x1024';
-    quality: 'standard' | 'hd';
+    quality: 'low' | 'medium' | 'high' | 'auto';
     output_format: 'jpeg' | 'png';
     output_compression: number;
     onAccept: (index: number, image: string) => void;

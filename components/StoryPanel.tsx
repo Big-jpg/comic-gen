@@ -15,7 +15,7 @@ const SIZES = {
 } as const;
 
 type SizeKey = keyof typeof SIZES;
-type Quality = 'standard' | 'hd';
+type Quality = 'low' | 'medium' | 'high' | 'auto';
 type Format = 'jpeg' | 'png';
 
 type Panel = {
@@ -29,7 +29,7 @@ export default function StoryPanel({ modifiers }: Props) {
     const [prompt, setPrompt] = useState('');
     const [modifier, setModifier] = useState(modifiers[0]);
     const [size, setSize] = useState<SizeKey>('square');
-    const [quality, setQuality] = useState<Quality>('hd');
+    const [quality, setQuality] = useState<Quality>('high');
     const [format, setFormat] = useState<Format>('jpeg');
     const [compression, setCompression] = useState<number>(50);
     const [loading, setLoading] = useState(false);
@@ -150,8 +150,10 @@ export default function StoryPanel({ modifiers }: Props) {
                 value={quality}
                 onChange={(e) => setQuality(e.target.value as Quality)}
             >
-                <option value="standard">Standard</option>
-                <option value="hd">High Definition</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="auto">Auto</option>
             </select>
 
             <label className="block font-medium">Output Format</label>
