@@ -27,15 +27,13 @@ export default function PanelEditor({
     const [loading, setLoading] = useState(false);
     const [accepted, setAccepted] = useState(false);
 
-    const prompt = `Draw the following scene: ${visual}. Caption: \"${caption}\"`;
-
     async function generate() {
         setLoading(true);
         try {
             const res = await fetch('/api/generate-image', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, size, quality, output_format, output_compression }),
+                body: JSON.stringify({ visual, caption, size, quality, output_format, output_compression }),
             });
             if (!res.ok) throw new Error(await res.text());
             const { url } = await res.json();
