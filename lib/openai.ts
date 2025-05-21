@@ -31,8 +31,8 @@ Instructions:
     const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
     const result = await openai.images.generate({
-        model: 'gpt-image-1',
         prompt,
+        model: 'gpt-image-1',
         size,
         quality,
         output_compression: compression,

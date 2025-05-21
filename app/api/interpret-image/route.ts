@@ -8,14 +8,6 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY!,
 });
 
-type Panel = {
-    visual: string;
-    caption: string;
-    imageUrl?: string;        // holds generated image
-    accepted: boolean;        // user locked it in
-};
-
-
 export async function POST(req: NextRequest) {
     const { summary, modifier } = await req.json();
 

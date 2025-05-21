@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
         const stitchedBase64 = composite.toString('base64');
         return NextResponse.json({ image: stitchedBase64 });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Stitching error:', error);
         return NextResponse.json({ error: 'Failed to stitch panels.' }, { status: 500 });
     }

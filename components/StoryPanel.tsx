@@ -27,24 +27,25 @@ type Panel = {
 
 export default function StoryPanel({ modifiers }: Props) {
     const [prompt, setPrompt] = useState('');
+    // Modifier is now user-selectable
     const [modifier, setModifier] = useState(modifiers[0]);
-    const [size, setSize] = useState<SizeKey>('square');
-    const [quality, setQuality] = useState<Quality>('high');
-    const [format, setFormat] = useState<Format>('jpeg');
-    const [compression, setCompression] = useState<number>(50);
+    // The rest are constants for now
+    const size: SizeKey = 'square';
+    const quality: Quality = 'high';
+    const format: Format = 'jpeg';
+    const compression: number = 50;
+
     const [loading, setLoading] = useState(false);
     const [panels, setPanels] = useState<Panel[]>([]);
     const [finalStrip, setFinalStrip] = useState<string | null>(null);
 
-    async function interpret() {
+    async function interpret(initialPrompt: string, context: string[] = []) {
         setLoading(true);
-        setPanels([]);
-        setFinalStrip(null);
 
         const res = await fetch('/api/interpret-image', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ summary: prompt, modifier }),
+            body: JSON.stringify({ summary: initialPrompt, modifier, context }),
         });
 
         if (!res.ok) {
@@ -56,26 +57,55 @@ export default function StoryPanel({ modifiers }: Props) {
 
         const { script } = await res.json();
         const parsed = parsePanels(script);
-        setPanels(parsed);
+
+        if (parsed.length > 0) {
+            setPanels(prev => [...prev, parsed[0]]);
+        }
+
         setLoading(false);
     }
 
     function parsePanels(script: string): Panel[] {
         const lines = script.split(/\r?\n/).filter(Boolean);
-        const regex = /^\d\.\s*Panel\s*\d:\s*(.+?)\s*\(Caption:\s*\"(.*?)\"\)/i;
+        const panels: Panel[] = [];
 
-        return lines.map((line) => {
-            const match = regex.exec(line.trim());
-            return match
-                ? { visual: match[1].trim(), caption: match[2].trim(), accepted: false }
-                : { visual: line, caption: '', accepted: false };
-        });
+        for (const line of lines) {
+            const trimmed = line.trim();
+            const match = /^(\d+\.\s*)?Panel\s*\d+:\s*(.*?)(?:\s*\(Caption:\s*["“](.*?)["”]\))?$/i.exec(trimmed);
+
+            if (match) {
+                const visual = match[2].trim();           // <-- use const
+                let caption = match[3]?.trim() || '';     // <-- keep let
+
+                if (caption.split(/\s+/).length > 20) {
+                    caption = caption.split(/\s+/).slice(0, 20).join(' ') + '…';
+                }
+
+                panels.push({ visual, caption, accepted: false });
+            } else {
+                panels.push({ visual: trimmed, caption: '', accepted: false });
+            }
+
+
+            if (panels.length >= 1) break;
+        }
+
+        return panels;
     }
 
     function handleAccept(index: number, image: string) {
-        setPanels((prev) =>
-            prev.map((p, i) => (i === index ? { ...p, image, accepted: true } : p))
-        );
+        setPanels((prev) => {
+            const updated = prev.map((p, i) => (i === index ? { ...p, image, accepted: true } : p));
+
+            if (index === prev.length - 1 && updated.length < 4) {
+                const context = updated
+                    .filter(p => p.accepted)
+                    .map(p => `${p.visual} (Caption: \"${p.caption}\")`);
+                interpret(prompt, context);
+            }
+
+            return updated;
+        });
     }
 
     async function stitchPanels() {
@@ -118,71 +148,24 @@ export default function StoryPanel({ modifiers }: Props) {
                 onChange={(e) => setPrompt(e.target.value)}
             />
 
-            <label className="block font-medium">Visual Style</label>
+            {/* Modifier dropdown */}
+            <label className="block font-medium mt-4">Visual Style</label>
             <select
                 className="w-full p-2 border rounded"
                 value={modifier}
-                onChange={(e) => setModifier(e.target.value)}
+                onChange={e => setModifier(e.target.value)}
             >
-                {modifiers.map((mod) => (
-                    <option key={mod} value={mod}>
-                        {mod}
-                    </option>
+                {modifiers.map((m) => (
+                    <option key={m} value={m}>{m}</option>
                 ))}
             </select>
-
-            <label className="block font-medium">Aspect Ratio</label>
-            <select
-                className="w-full p-2 border rounded"
-                value={size}
-                onChange={(e) => setSize(e.target.value as SizeKey)}
-            >
-                {Object.keys(SIZES).map((key) => (
-                    <option key={key} value={key}>
-                        {key}
-                    </option>
-                ))}
-            </select>
-
-            <label className="block font-medium">Image Quality</label>
-            <select
-                className="w-full p-2 border rounded"
-                value={quality}
-                onChange={(e) => setQuality(e.target.value as Quality)}
-            >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="auto">Auto</option>
-            </select>
-
-            <label className="block font-medium">Output Format</label>
-            <select
-                className="w-full p-2 border rounded"
-                value={format}
-                onChange={(e) => setFormat(e.target.value as Format)}
-            >
-                <option value="jpeg">JPEG</option>
-                <option value="png">PNG</option>
-            </select>
-
-            <label className="block font-medium">Compression ({compression}%)</label>
-            <input
-                type="range"
-                min={10}
-                max={90}
-                step={1}
-                value={compression}
-                onChange={(e) => setCompression(Number(e.target.value))}
-                className="w-full"
-            />
 
             <button
-                onClick={interpret}
-                disabled={loading}
+                onClick={() => interpret(prompt)}
+                disabled={loading || panels.length > 0}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full transition-colors"
             >
-                {loading ? 'Processing...' : 'Interpret Script'}
+                {loading ? 'Processing...' : 'Start with Panel 1'}
             </button>
 
             <button
@@ -207,11 +190,15 @@ export default function StoryPanel({ modifiers }: Props) {
                                 output_format={format}
                                 output_compression={compression}
                                 onAccept={handleAccept}
+                                context={panels
+                                    .slice(0, idx)
+                                    .filter(p => p.accepted)
+                                    .map(p => `${p.visual} (Caption: \"${p.caption}\")`)}
                             />
                         ))}
                     </div>
 
-                    {panels.every(p => p.accepted) && (
+                    {panels.every(p => p.accepted) && panels.length === 4 && (
                         <>
                             <PanelLayout panels={panels.map(p => p.image!)} />
                             <div className="flex gap-4 mt-4">
