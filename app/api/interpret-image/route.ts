@@ -1,4 +1,4 @@
-// ---- /app/api/generate-image/route.ts ----
+// ---- /app/api/interpret-image/route.ts ----
 "use server";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +11,7 @@ const openai = new OpenAI({
 export async function POST(req: NextRequest) {
     const { summary, modifier } = await req.json();
 
-    if (!summary || summary.length < 125) {
+    if (!summary || summary.length < 50) {
         return NextResponse.json(
             { error: "Summary content too short for comic visualization." },
             { status: 400 }

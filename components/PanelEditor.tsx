@@ -6,7 +6,6 @@ interface PanelEditorProps {
     index: number;
     visual: string;
     caption: string;
-    context: string[];
     size: '1024x1024' | '1024x1792' | '1792x1024';
     quality: 'low' | 'medium' | 'high' | 'auto';
     output_format: 'jpeg' | 'png';
@@ -18,7 +17,6 @@ export default function PanelEditor({
     index,
     visual,
     caption,
-    context,
     size,
     quality,
     output_format,
@@ -30,17 +28,17 @@ export default function PanelEditor({
     const [accepted, setAccepted] = useState(false);
 
     async function generate() {
+        if (!visual.trim() || !caption.trim()) {
+            console.error(`Panel ${index + 1} generation skipped: visual or caption missing`);
+            return;
+        }
+
         setLoading(true);
         try {
-            const fullPrompt = [
-                ...(context || []),
-                `${visual} (Caption: "${caption}")`
-            ].join('\n');
-
             const res = await fetch('/api/generate-image', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: fullPrompt, size, quality, output_format, output_compression }),
+                body: JSON.stringify({ visual, caption, size, quality, output_format, output_compression }),
             });
             if (!res.ok) throw new Error(await res.text());
             const { url } = await res.json();
